@@ -40,6 +40,9 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 public class MainScrn extends Application {
+	int cod = 0;
+	int cuphone;
+	int finishCheck = 0;
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
@@ -170,6 +173,8 @@ public class MainScrn extends Application {
 
 	public void onDeliveryClick() {
 
+		cod = 1;
+
 		Stage deliveryStage = new Stage();
 
 		BorderPane bp = new BorderPane();
@@ -204,6 +209,11 @@ public class MainScrn extends Application {
 		TextField phone = new TextField();
 		phone.setMinWidth(100);
 		phone.setMaxWidth(1000);
+
+		// textarea for previous order
+		TextArea prevo = new TextArea();
+		prevo.setPrefRowCount(100);
+		prevo.setPrefColumnCount(20);
 
 		// label for name
 		Label inname = new Label("Name: ");
@@ -259,12 +269,14 @@ public class MainScrn extends Application {
 		// textfield for state
 		TextField zip = new TextField();
 
+		Text error = new Text("Please Enter the required feilds");
+
 		// label for Driver instructions
 		Label indi = new Label("Driver Instructions:");
 		indi.setMinWidth(Region.USE_PREF_SIZE);
 		indi.setMaxWidth(Region.USE_PREF_SIZE);
 
-		// textfield for Driver Instructions
+		// textarea for Driver Instructions
 		TextArea di = new TextArea();
 		di.setPrefRowCount(4);
 
@@ -301,6 +313,14 @@ public class MainScrn extends Application {
 							zip.setText(myRs.getString(7));
 							di.setText(myRs.getString(8));
 						}
+						Statement myStmt1 = myConn.createStatement();
+						// 3. Execute SQL query
+
+						ResultSet myRs1 = myStmt1
+								.executeQuery("select * from PreviousOrder where Phones = '" + phone.getText() + "'");
+						while (myRs1.next()) {
+							prevo.setText(myRs1.getString(2));
+						}
 
 					} catch (SQLException e) {
 						// TODO Auto-generated catch block
@@ -312,39 +332,48 @@ public class MainScrn extends Application {
 		});
 
 		next.setOnMouseClicked(e -> {
-			try {
-				// 1. Get a connection
-				Connection myConn = DriverManager.getConnection(
-						"jdbc:mysql://localhost/PizzaMS?verifyServerCertificate=false&useSSL=true", "root", "password");
-				// 2. Create a statement
-				Statement myStmt = myConn.createStatement();
-				// 3. Execute SQL query
-				ResultSet myRs = myStmt
-						.executeQuery("select * from CustomerInfo where Phone = '" + phone.getText() + "'");
-				// 4. process result set
-				if (myRs.next()) {
-					deliveryStage.close();
-				} else {
-					myStmt = myConn.createStatement();
+			if (phone.getText().length() == 10 && name.getText().length() > 3 && af1.getText().length() > 8
+					&& city.getText().length() > 2 && state.getText().length() > 0 && zip.getText().length() > 4) {
+				try {
+					// 1. Get a connection
+					Connection myConn = DriverManager.getConnection(
+							"jdbc:mysql://localhost/PizzaMS?verifyServerCertificate=false&useSSL=true", "root",
+							"password");
+					// 2. Create a statement
+					Statement myStmt = myConn.createStatement();
+					// 3. Execute SQL query
+					ResultSet myRs = myStmt
+							.executeQuery("select * from CustomerInfo where Phone = '" + phone.getText() + "'");
+					// 4. process result set
+					if (myRs.next()) {
+						deliveryStage.close();
+					} else {
+						myStmt = myConn.createStatement();
 
-					String sql = "INSERT INTO CustomerInfo " + "VALUES ('" + phone.getText() + "', '" + name.getText()
-							+ "', '" + af1.getText() + "','" + af2.getText() + "','" + city.getText() + "','"
-							+ state.getText() + "', '" + zip.getText() + "','" + di.getText() + "')";
-					myStmt.executeUpdate(sql);
+						String sql = "INSERT INTO CustomerInfo " + "VALUES ('" + phone.getText() + "', '"
+								+ name.getText() + "', '" + af1.getText() + "','" + af2.getText() + "','"
+								+ city.getText() + "','" + state.getText() + "', '" + zip.getText() + "','"
+								+ di.getText() + "')";
+						myStmt.executeUpdate(sql);
 
-					myStmt.executeUpdate(sql);
+					}
+
+				} catch (Exception exc) {
+					exc.printStackTrace();
 				}
 
-			} catch (Exception exc) {
-				exc.printStackTrace();
-			}
-
-			deliveryStage.close();
-			try {
-				chosePizza();
-			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				deliveryStage.close();
+				try {
+					chosePizza(phone);
+				} catch (FileNotFoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			} else {
+				gp.add(error, 2, 24);
 			}
 		});
 
@@ -378,6 +407,7 @@ public class MainScrn extends Application {
 		gp.add(di, 0, 11, 8, 13);
 		gp.add(next, 4, 25);
 		gp.add(backToSelect, 2, 25);
+		gp.add(prevo, 10, 0, 6, 30);
 
 		bp.setRight(gp);
 		bp.setTop(sp);
@@ -389,6 +419,7 @@ public class MainScrn extends Application {
 	}
 
 	public void onCarryoutClick() {
+		cod = 2;
 
 		Stage carryoutStage = new Stage();
 
@@ -403,6 +434,12 @@ public class MainScrn extends Application {
 		carout.setFill(Color.BLACK);
 		sp.getChildren().add(carout);
 		sp.setAlignment(Pos.CENTER);
+
+		TextArea prevo = new TextArea();
+		prevo.setPrefRowCount(100);
+		prevo.setPrefColumnCount(20);
+
+		Text error = new Text("Please Enter the required feilds");
 
 		// Right Grid Pane setup
 		for (int i = 0; i < 11; i++) {
@@ -521,6 +558,15 @@ public class MainScrn extends Application {
 							name.setText(myRs.getString(1));
 						}
 
+						Statement myStmt1 = myConn.createStatement();
+						// 3. Execute SQL query
+
+						ResultSet myRs1 = myStmt1
+								.executeQuery("select * from PreviousOrder where Phones = '" + phone.getText() + "'");
+						while (myRs1.next()) {
+							prevo.setText(myRs1.getString(2));
+						}
+
 					} catch (SQLException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -532,39 +578,47 @@ public class MainScrn extends Application {
 		});
 
 		next.setOnMouseClicked(e -> {
-			try {
-				// 1. Get a connection
-				Connection myConn = DriverManager.getConnection(
-						"jdbc:mysql://localhost/PizzaMS?verifyServerCertificate=false&useSSL=true", "root", "password");
-				// 2. Create a statement
-				Statement myStmt = myConn.createStatement();
-				// 3. Execute SQL query
-				ResultSet myRs = myStmt
-						.executeQuery("select * from CustomerInfo where Phone = '" + phone.getText() + "'");
-				// 4. process result set
-				if (myRs.next()) {
-					carryoutStage.close();
-				} else {
-					myStmt = myConn.createStatement();
+			if (phone.getText().length() == 10 && name.getText().length() > 1) {
+				try {
+					// 1. Get a connection
+					Connection myConn = DriverManager.getConnection(
+							"jdbc:mysql://localhost/PizzaMS?verifyServerCertificate=false&useSSL=true", "root",
+							"password");
+					// 2. Create a statement
+					Statement myStmt = myConn.createStatement();
+					// 3. Execute SQL query
+					ResultSet myRs = myStmt
+							.executeQuery("select * from CustomerInfo where Phone = '" + phone.getText() + "'");
+					// 4. process result set
+					if (myRs.next()) {
+						carryoutStage.close();
+					} else {
+						myStmt = myConn.createStatement();
 
-					String sql = "INSERT INTO CustomerInfo " + "VALUES ('" + phone.getText() + "', '" + name.getText()
-							+ "', '" + af1.getText() + "','" + af2.getText() + "','" + city.getText() + "','"
-							+ state.getText() + "', '" + 30060 + "','" + di.getText() + "')";
-					myStmt.executeUpdate(sql);
+						String sql = "INSERT INTO CustomerInfo " + "VALUES ('" + phone.getText() + "', '"
+								+ name.getText() + "', '" + af1.getText() + "','" + af2.getText() + "','"
+								+ city.getText() + "','" + state.getText() + "', '" + 30060 + "','" + di.getText()
+								+ "')";
+						myStmt.executeUpdate(sql);
 
-					myStmt.executeUpdate(sql);
+					}
+
+				} catch (Exception exc) {
+					exc.printStackTrace();
 				}
 
-			} catch (Exception exc) {
-				exc.printStackTrace();
-			}
-
-			carryoutStage.close();
-			try {
-				chosePizza();
-			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				carryoutStage.close();
+				try {
+					chosePizza(phone);
+				} catch (FileNotFoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			} else {
+				gp.add(error, 3, 25);
 			}
 		});
 
@@ -596,8 +650,9 @@ public class MainScrn extends Application {
 		gp.add(zip, 3, 8);
 		gp.add(indi, 0, 10);
 		gp.add(di, 0, 11, 8, 13);
-		gp.add(next, 4, 25);
-		gp.add(backToSelect, 2, 25);
+		gp.add(next, 4, 26);
+		gp.add(backToSelect, 2, 26);
+		gp.add(prevo, 10, 0, 6, 30);
 
 		bp.setRight(gp);
 		bp.setTop(sp);
@@ -608,7 +663,9 @@ public class MainScrn extends Application {
 		carryoutStage.setTitle("Pizza Management System");
 	}
 
-	public void chosePizza() throws FileNotFoundException {
+	double total = 0;
+
+	public void chosePizza(TextField cphone) throws FileNotFoundException, SQLException {
 
 		// getting images from files.
 		FileInputStream inbeef = new FileInputStream("beef.jpg");
@@ -632,7 +689,7 @@ public class MainScrn extends Application {
 		FileInputStream inbrownie = new FileInputStream("brownie.jpg");
 		FileInputStream inbwings = new FileInputStream("bwings.png");
 		FileInputStream inwings = new FileInputStream("wings.jpg");
-		
+
 		// converting to a viewable node image
 		Image ibeef = new Image(inbeef);
 		Image igp = new Image(ingp);
@@ -679,6 +736,74 @@ public class MainScrn extends Application {
 		ImageView wings = new ImageView(iwings);
 		ImageView bwings = new ImageView(ibwings);
 
+		TextArea rcpt = new TextArea("                              Pizza");
+		rcpt.setPrefRowCount(100);
+		rcpt.setPrefColumnCount(20);
+
+		ResultSet myRs;
+		String phone;
+		String name;
+		String af1;
+		String af2;
+		String city;
+		String state;
+		String zip;
+		String di;
+
+		// 1. Get a connection
+		Connection myConn = DriverManager.getConnection(
+				"jdbc:mysql://localhost/PizzaMS?verifyServerCertificate=false&useSSL=true", "root", "password");
+		// 2. Create a statement
+		Statement myStmt = myConn.createStatement();
+		// 3. Execute SQL query
+		myRs = myStmt.executeQuery("select * from CustomerInfo where Phone = '" + cphone.getText() + "'");
+		// 4. process result set
+		if (myRs.next()) {
+			phone = myRs.getString(1);
+			name = myRs.getString(2);
+			af1 = myRs.getString(3);
+			af2 = myRs.getString(4);
+			city = myRs.getString(5);
+			state = myRs.getString(6);
+			zip = myRs.getString(7);
+			di = myRs.getString(8);
+
+			rcpt.appendText("\n\n");
+			rcpt.appendText(name + "\n");
+			rcpt.appendText(phone + "\n");
+			rcpt.appendText(af1 + "\n");
+			if (af2.length() > 0) {
+				rcpt.appendText(af2 + "\n");
+			}
+			rcpt.appendText(city + " ");
+			rcpt.appendText(state + " ");
+			rcpt.appendText(zip + "\n \n");
+			rcpt.appendText(di + "\n\n");
+		}
+
+		Button next = new Button("Next");
+
+		next.setOnMouseClicked(s -> {
+
+			try {
+				// 1. Get a connection
+				Connection myConn1 = DriverManager.getConnection(
+						"jdbc:mysql://localhost/PizzaMS?verifyServerCertificate=false&useSSL=true", "root", "password");
+				// 2. Create a statement
+				Statement myStmt1 = myConn1.createStatement();
+				// 3. Execute SQL query
+
+				String sql = "INSERT INTO PreviousOrder " + "VALUES ('" + cphone.getText() + "', '" + rcpt.getText()
+						+ "')";
+				myStmt.executeUpdate(sql);
+
+			} catch (SQLException b) {
+				// TODO Auto-generated catch block
+				b.printStackTrace();
+			}
+
+		});
+
 		Stage chosePizza = new Stage();
 		BorderPane bp = new BorderPane();
 		TabPane tb = new TabPane();
@@ -686,6 +811,7 @@ public class MainScrn extends Application {
 
 		Tab pizzaSelect = new Tab("Pizza");
 		Tab sideSelect = new Tab("Sides");
+		Button back = new Button("Back");
 
 		pizzaSelect.setClosable(false);
 		sideSelect.setClosable(false);
@@ -702,33 +828,61 @@ public class MainScrn extends Application {
 		ToggleGroup pzs = new ToggleGroup();
 		ToggleGroup pzc = new ToggleGroup();
 
-		Label crustl = new Label("Crust: ");
+		Label crustl = new Label("Size: ");
 
 		ToggleButton smallPz = new ToggleButton("Small");
 		smallPz.setMinWidth(Region.USE_PREF_SIZE);
 		smallPz.setMaxWidth(Region.USE_PREF_SIZE);
 
+		smallPz.setOnMouseClicked(e -> {
+
+			rcpt.appendText("\nSmall Pizza                           $8.00\n");
+			total = total + 8;
+		});
+
 		ToggleButton medPz = new ToggleButton("Medium");
 		medPz.setMinWidth(Region.USE_PREF_SIZE);
 		medPz.setMaxWidth(Region.USE_PREF_SIZE);
+
+		medPz.setOnMouseClicked(e -> {
+			rcpt.appendText("\nMedium Pizza                       $10.00\n");
+			total = total + 10;
+		});
 
 		ToggleButton largePz = new ToggleButton("Large");
 		largePz.setMinWidth(Region.USE_PREF_SIZE);
 		largePz.setMaxWidth(Region.USE_PREF_SIZE);
 
+		largePz.setOnMouseClicked(e -> {
+			rcpt.appendText("\nlarge Pizza                            $12.00\n");
+			total = total + 12;
+		});
+
 		Label saucel = new Label("Sauce: ");
 
-		ToggleButton sauce = new ToggleButton("Light");
+		ToggleButton sauce = new ToggleButton("Classic");
 		sauce.setMinWidth(Region.USE_PREF_SIZE);
 		sauce.setMaxWidth(Region.USE_PREF_SIZE);
+
+		sauce.setOnMouseClicked(e -> {
+			rcpt.appendText("\tClassic sauce                $0.00\n");
+		});
 
 		ToggleButton lightSauce = new ToggleButton("Light");
 		lightSauce.setMinWidth(Region.USE_PREF_SIZE);
 		lightSauce.setMaxWidth(Region.USE_PREF_SIZE);
 
+		lightSauce.setOnMouseClicked(e -> {
+			rcpt.appendText("\tlight sauce                    $0.00\n");
+		});
+
 		ToggleButton extraSauce = new ToggleButton("Extra");
 		extraSauce.setMinWidth(Region.USE_PREF_SIZE);
 		extraSauce.setMaxWidth(Region.USE_PREF_SIZE);
+
+		extraSauce.setOnMouseClicked(e -> {
+			rcpt.appendText("\tExtra sauce                   $0.00\n");
+		});
 
 		GridPane gp = new GridPane();
 		GridPane sp = new GridPane();
@@ -740,66 +894,162 @@ public class MainScrn extends Application {
 		}
 		for (int i = 0; i < 11; i++) {
 			gp.getColumnConstraints().add(new ColumnConstraints(50)); // column
-			sp.getColumnConstraints().add(new ColumnConstraints(50));															// //
-																		// wide
+			sp.getColumnConstraints().add(new ColumnConstraints(50)); // //
+			// wide
 		}
+		pane.getChildren().add(rcpt);
 
 		beef.setFitWidth(80);
 		beef.setFitHeight(80);
 
+		beef.setOnMouseClicked(e -> {
+			rcpt.appendText("\tBeef                               $0.25\n");
+			total = total + .25;
+		});
+
 		greenpepper.setFitWidth(80);
 		greenpepper.setFitHeight(80);
+
+		greenpepper.setOnMouseClicked(e -> {
+			rcpt.appendText("\tGreen Peppers             $0.25\n");
+			total = total + .25;
+		});
 
 		onion.setFitWidth(80);
 		onion.setFitHeight(80);
 
+		onion.setOnMouseClicked(e -> {
+			rcpt.appendText("\tOnion                            $0.25\n");
+			total = total + .25;
+		});
+
 		pep.setFitWidth(80);
 		pep.setFitHeight(80);
+
+		pep.setOnMouseClicked(e -> {
+			rcpt.appendText("\tPepperoni                     $0.25\n");
+			total = total + .25;
+		});
 
 		chicken.setFitWidth(80);
 		chicken.setFitHeight(80);
 
+		chicken.setOnMouseClicked(e -> {
+			rcpt.appendText("\tChicken                         $0.25\n");
+			total = total + .25;
+		});
+
 		ham.setFitWidth(80);
 		ham.setFitHeight(80);
+
+		ham.setOnMouseClicked(e -> {
+			rcpt.appendText("\tHam                               $0.25\n");
+			total = total + .25;
+		});
 
 		mush.setFitWidth(80);
 		mush.setFitHeight(80);
 
+		mush.setOnMouseClicked(e -> {
+			rcpt.appendText("\tMushrooms                  $0.25\n");
+			total = total + .25;
+		});
+
 		olive.setFitWidth(80);
 		olive.setFitHeight(80);
+
+		olive.setOnMouseClicked(e -> {
+			rcpt.appendText("\tOlives                           $0.25\n");
+			total = total + .25;
+		});
 
 		toma.setFitWidth(80);
 		toma.setFitHeight(80);
 
+		toma.setOnMouseClicked(e -> {
+			rcpt.appendText("\tTomatoes                     $0.25\n");
+			total = total + .25;
+		});
+
 		spin.setFitWidth(80);
 		spin.setFitHeight(80);
-		
+
+		spin.setOnMouseClicked(e -> {
+			rcpt.appendText("\tSpinich                          $0.25\n");
+			total = total + .25;
+		});
+
 		pepsi.setFitWidth(80);
 		pepsi.setFitHeight(80);
+
+		pepsi.setOnMouseClicked(e -> {
+			rcpt.appendText("\nPepsi                                     $2.99\n");
+			total = total + 2.99;
+		});
 
 		mtndew.setFitWidth(80);
 		mtndew.setFitHeight(80);
 
+		mtndew.setOnMouseClicked(e -> {
+			rcpt.appendText("\nMountain Dew                      $2.99\n");
+			total = total + 2.99;
+		});
+
 		crush.setFitWidth(80);
 		crush.setFitHeight(80);
+
+		crush.setOnMouseClicked(e -> {
+			rcpt.appendText("\nCrush                                    $2.99\n");
+			total = total + 2.99;
+		});
 
 		drpep.setFitWidth(80);
 		drpep.setFitHeight(80);
 
+		drpep.setOnMouseClicked(e -> {
+			rcpt.appendText("\nDr Pepper                             $2.99\n");
+			total = total + 2.99;
+		});
+
 		bread.setFitWidth(80);
 		bread.setFitHeight(80);
+
+		bread.setOnMouseClicked(e -> {
+			rcpt.appendText("\nBread Sticks                         $5.00\n");
+			total = total + 2.99;
+		});
 
 		cheese.setFitWidth(80);
 		cheese.setFitHeight(80);
 
+		cheese.setOnMouseClicked(e -> {
+			rcpt.appendText("\nCheese Sticks                      $6.00\n");
+			total = total + 2.99;
+		});
+
 		brownie.setFitWidth(80);
 		brownie.setFitHeight(80);
-		
+
+		brownie.setOnMouseClicked(e -> {
+			rcpt.appendText("\nBrownie                                $6.00\n");
+			total = total + 2.99;
+		});
+
 		wings.setFitWidth(80);
 		wings.setFitHeight(80);
 
+		wings.setOnMouseClicked(e -> {
+			rcpt.appendText("\nTraditional Wings                 $5.00\n");
+			total = total + 2.99;
+		});
+
 		bwings.setFitWidth(80);
 		bwings.setFitHeight(80);
+
+		bwings.setOnMouseClicked(e -> {
+			rcpt.appendText("\nBone-out Wings                   $5.00\n");
+			total = total + 2.99;
+		});
 
 		pzs.getToggles().addAll(sauce, lightSauce, extraSauce);
 		pzc.getToggles().addAll(smallPz, medPz, largePz);
@@ -809,7 +1059,49 @@ public class MainScrn extends Application {
 
 		sp.setVgap(20);
 		sp.setHgap(20);
-		
+
+		// back button
+		back.setOnMouseClicked(e -> {
+			if (cod == 1) {
+				chosePizza.close();
+				onDeliveryClick();
+
+			} else if (cod == 2) {
+				chosePizza.close();
+				onCarryoutClick();
+			}
+		});
+
+		Button finishOrder = new Button("Finish Order");
+		finishOrder.setMinWidth(Region.USE_PREF_SIZE);
+		finishOrder.setMaxWidth(Region.USE_PREF_SIZE);
+
+		finishOrder.setOnMouseClicked(e -> {
+			if (finishCheck != 1) {
+				if (cod == 2) {
+					double taxvalue = total * .07;
+					Text tax = new Text("Tax: " + taxvalue);
+					Text finalttl = new Text("Total:                       $" + (total + taxvalue));
+					rcpt.appendText("\nSubtotal:                               $" + total);
+					rcpt.appendText("\nTax:                                      $  " + taxvalue);
+					rcpt.appendText("\nTotal:                                     $" + (total + taxvalue));
+					finishCheck++;
+				}
+				else {
+					double taxvalue = total * .07;
+					double dfee = 3.99;
+
+					Text tax = new Text("Tax: " + taxvalue);
+					Text finalttl = new Text("Total:                       $" + (total + taxvalue));
+					rcpt.appendText("\nSubtotal:                               $" + total);
+					rcpt.appendText("\nTax:                                       $  " + taxvalue);
+					rcpt.appendText("\nDelivery fee;                          $  " + dfee);
+					rcpt.appendText("\nTotal:                                     $" + (total + taxvalue +dfee));
+					finishCheck++;
+				}
+			}
+		});
+
 		gp.add(crustl, 0, 1);
 		gp.add(saucel, 0, 2);
 		gp.add(lightSauce, 5, 2);
@@ -828,7 +1120,10 @@ public class MainScrn extends Application {
 		gp.add(olive, 3, 5);
 		gp.add(toma, 5, 5);
 		gp.add(spin, 1, 6);
-		
+		gp.add(back, 1, 8);
+		gp.add(next, 5, 8);
+		gp.add(finishOrder, 3, 8);
+
 		sp.add(pepsi, 1, 1);
 		sp.add(mtndew, 3, 1);
 		sp.add(crush, 5, 1);
@@ -842,7 +1137,7 @@ public class MainScrn extends Application {
 		sideSelect.setContent(sp);
 		pizzaSelect.setContent(gp);
 		bp.setCenter(tb);
-		bp.setRight(pane);
+		bp.setLeft(pane);
 
 		Scene scene = new Scene(bp, 1000, 1000);
 		chosePizza.setScene(scene);
